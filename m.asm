@@ -272,6 +272,47 @@ sum_loop:
 
 	
 MAX:
+	move $s0, $a1 # NUM address
+	move $s1, $a2 # ARR address
+	lb $s2, ($a1) # ARR length
+	
+	beq $s2, 0, print_arr_empty # If array is empty, nothing to delete, notify and return to main
+	
+	lw $t0, ($s1) # load first number from array
+	li $t1, 0 # index counter
+loop_max:
+	sll $t2, $t1, 2 # Calculate word offset for index
+	add $t3, $t2, $s1 # Calculate current address of array
+	lw $t4, ($t3) # Read value from array
+	bgt $t4, $t0, replace_max # Check if current value is greater than max number so far
+	addi $t1, $t1, 1 # Increment index counter
+continue_loop:
+	ble $t1, $s2, loop_max # loop until end of array
+	
+	li $v0, 4 # Prepare print string
+	la $a0, CHOOSE_BASE_MSG #What basis to print?
+	syscall # Print string
+	
+	li $v0, 5 # Prepare read integer
+	syscall # Read integer
+	
+	sub $sp, $sp, -4 # Decrement $sp
+	sw $ra, 4($sp) # Push $ra to stack
+	
+	move $a1, $t0 # Pass max to print
+	move $a2, $v0 # Pass basis to print in
+	
+	jal PRINT_NUM # Call print_num procedure
+	
+	lw $ra, 4($sp) # Pop $ra from stack
+	addi $sp, $sp, 4 # Increment stack pointer
+	
+	jr $ra # return to caller
+
+replace_max:
+	move $t0, $t4 # store the new max value in t0
+	j continue_loop # return to loop
+
 PRINT_ARRAY:
 SORT:
 
