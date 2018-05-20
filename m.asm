@@ -10,6 +10,7 @@ JUMP_TABLE: .word ADD_NUMBER, REPLACE, DEL, FIND, AVERAGE, MAX, PRINT_ARRAY, SOR
 MENU_MSG: .asciiz "\nThe options are:\n1. Enter a number (base 10)\n2. Replace a number (base 10)\n3. DEL a number (base 10)\n4. Find a number in the array (base 10)\n5. Find average (base 2-10)\n6. Find Max (base 2-10)\n7. Print the array elements (base 2-10)\n8. Print sort array (base 2-10)\n9. END\n"
 ARR_FULL_MSG: .asciiz "The array is full."
 NUMBER_EXISTS_MSG: .asciiz "Number exists at index: "
+NUMBER_NOT_FOUND_MSG: .asciiz "The number does not exist in the array"
 ARR_EMPTY_MSG: .asciiz "The array is empty."
 INPUT_NUM_MSG: .asciiz "What number to add?"
 REPLACE_NUM_MSG: .asciiz "What number to replace?"
@@ -38,11 +39,13 @@ main:
 	j main #Loop menu
 
 #Menu procedures
+
+#Tries to add a number to the array from user input, if the number the user tries to add exists on the array, notify and don't add
 ADD_NUMBER:
 	move $s0, $a1 # NUM address
 	move $s1, $a2 # ARR address
-
-	lb $s2, ($a1) # get array length
+	lb $s2, ($a1) # ARR length
+	
 	beq $s2, 30, print_arr_full # if array is full, print it and return to main
 	
 	li $v0, 4 # Prepare print string
@@ -61,12 +64,14 @@ ADD_NUMBER:
 	move $a2, $v0 # Pass user input as second argument
 	
 	jal CHECK # Call check procedure
+	
 	lw $t3 4($sp) # Pop user input from stack
 	lw $ra, 8($sp) # Pop $ra from stack
 	addi $sp, $sp, 8 # Increment stack pointer
-	move $t1, $v0 # Store check result in $t1
 	
+	move $t1, $v0 # Store check result in $t1
 	bge $t1, 0, print_number_exists # If check returned an index, print that the number exists
+	
 	sll $t2, $s2, 2 # Calculate last array index using NUM value
 	add $t2, $t2, $s1 # Calculate last array address
 	sw $t3, ($t2) # Store user input in arr
@@ -85,34 +90,112 @@ print_number_exists:
 	la $a0, NUMBER_EXISTS_MSG # Notify number exists
 	syscall # Print string
 	li $v0, 1 # Prepare print integer
-	move $a0, $t1 # Print index value returned from CHECK
+	move $a0, $a1 # Print index value returned from CHECK
 	syscall # Print integer
 	jr $ra # Return to main
 
 REPLACE:
+	move $s0, $a1 # NUM address
+	move $s1, $a2 # ARR address
+	lb $s2, ($a1) # ARR length
+	
+	beq $s2, 0, print_arr_empty # If array is empty, nothing to replace, notify and return to main
+	
+	li $v0, 4 # Prepare print string
+	la $a0, REPLACE_NUM_MSG # What number to replace?
+	syscall # Print string
+	
+	li $v0, 5 # Prepare Read integer
+	syscall # Read Integer
+	
+	sub $sp, $sp, -8 # Decrement $sp
+	sw $v0, 4($sp) # Push number input to stack
+	sw $ra, 8($sp) # Push $ra to stack
+	
+	move $a1, $s2 # Pass array length as first argument
+	move $a3, $s1 # Pass array address as third argument
+	move $a2, $v0 # Pass user input as second argument
+	
+	jal CHECK # Call check procedure
+	
+	lw $t3 4($sp) # Pop user input from stack
+	lw $ra, 8($sp) # Pop $ra from stack
+	addi $sp, $sp, 8 # Increment stack pointer
+	
+	move $t4, $v0 # Store check result in $t4
+	beq $t4, -1, print_number_not_found # If number is not found, notify and return to main
+
+	addi $t5, $t3, '0' # Calculate ascii value of user input
+	addi $t6, $t4, '0' # Calculate ascii value of index found
+	sb $t5, REPLACE_WITH_MSG+19 # Update string with number input
+	sb $t6, REPLACE_WITH_MSG+31 # Update string with index
+	li $v0, 4 # Prepare print string
+	la $a0, REPLACE_WITH_MSG # Print replace with message
+	syscall # Print string
+	li $v0, 5 # Prepare read integer
+	syscall # Read integer
+	
+	sub $sp, $sp, -8 # Decrement $sp
+	sw $v0, 4($sp) # Push number input to stack
+	sw $ra, 8($sp) # Push $ra to stack
+	
+	move $a1, $s2 # Pass array length as first argument
+	move $a3, $s1 # Pass array address as third argument
+	move $a2, $v0 # Pass user input as second argument
+	
+	jal CHECK # Call check procedure
+	
+	lw $t3 4($sp) # Pop user input from stack
+	lw $ra, 8($sp) # Pop $ra from stack
+	addi $sp, $sp, 8 # Increment stack pointer
+	
+	move $a1, $v0 #Pass check result to print_number_exists
+	bge $v0, 0, print_number_exists # If the number exists, do no replace
+	
+	sll $t7, $t4, 2 # Calculate word offset of index found
+	add $t7, $t7, $s1 # Address of number to replace
+	
+	jr $ra # Return to main
+	
+print_arr_empty:
+	li $v0, 4 # Prepare print string
+	la $a0, ARR_EMPTY_MSG # Notify array is empty
+	syscall # Print string
+	jr $ra # Return to main
+
+print_number_not_found:
+	li $v0, 4 # Prepare print string
+	la $a0, NUMBER_NOT_FOUND_MSG # Number does not exist in array
+	syscall # Print string
+	jr $ra # Return to main
+
 DEL:
 FIND:
 AVERAGE:
 MAX:
 PRINT_ARRAY:
 SORT:
+
 END:
 	li $v0, 10 #Prepare exit syscall
 	syscall #Exit
 
-#Helper procedures
+#==================
+#Helper procedures=
+#==================
+
+#Procedure that returns the index of a number in an array (if not found, returns -1)
 #$a1 = Arr Length
 #$a2 = Number to check for
-#$a3 = Arr address
+#$a3 = Arr base address
 CHECK:
 	li $t0, 0 # Loop counter
-	move $t3, $a3 #Array base address
 check_loop:
 	beq $t0, $a1, number_not_found # Finished iterating array (number not found)
 	sll $t1, $t0, 2 # Multiply counter to align with word
-	add $t4, $t3, $t1 # Calculate current arr address
-	lw $t2, ($t4) # Read value from array
-	beq $t2, $a2, number_found # Value from array == argument number -> return index
+	add $t2, $a3, $t1 # Calculate current arr address
+	lw $t3, ($t2) # Read value from array
+	beq $t3, $a2, number_found # Value from array == argument number -> return index
 	addi $t0, $t0, 1 # Increment loop counter
 	j check_loop # loop
 	
