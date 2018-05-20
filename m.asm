@@ -14,7 +14,9 @@ NUMBER_NOT_FOUND_MSG: .asciiz "The number does not exist in the array"
 ARR_EMPTY_MSG: .asciiz "The array is empty."
 INPUT_NUM_MSG: .asciiz "What number to add?"
 REPLACE_NUM_MSG: .asciiz "What number to replace?"
-REPLACE_WITH_MSG: .asciiz "Replace the number # (in index #) with what number?"
+REPLACE_WITH_MSG: .asciiz "Replace the number "
+IN_INDEX_MSG: .asciiz " (in index "
+WITH_WHAT_NUMBER_MSG: .asciiz ") with what number?"
 DELETE_NUM_MSG: .asciiz "What number to delete?"
 FIND_NUM_MSG: .asciiz "What number to find?"
 CHOOSE_BASE_MSG: .asciiz "What basis should be used when printing the average? (2-10)"
@@ -110,14 +112,23 @@ REPLACE:
 	
 	move $t4, $v0 # Store check result in $t4
 	beq $t4, -1, print_number_not_found # If number is not found, notify and return to main
-
-	addi $t5, $t3, '0' # Calculate ascii value of user input
-	addi $t6, $t4, '0' # Calculate ascii value of index found
-	sb $t5, REPLACE_WITH_MSG+19 # Update string with number input
-	sb $t6, REPLACE_WITH_MSG+31 # Update string with index
+	
 	li $v0, 4 # Prepare print string
-	la $a0, REPLACE_WITH_MSG # Print replace with message
-	syscall # Print string
+	la $a0, REPLACE_WITH_MSG # Replace message
+	syscall 
+	li $v0, 1 # Prepare print Integer
+	move $a0, $t3 # Number found
+	syscall
+	li $v0, 4 # Prepare print string
+	la $a0, IN_INDEX_MSG # in index
+	syscall
+	li $v0, 1 # Prepare print Integer
+	move $a0, $t4 # Index found
+	syscall
+	li $v0, 4 # Prepare print string
+	la $a0, WITH_WHAT_NUMBER_MSG # with what number
+	syscall
+
 	li $v0, 5 # Prepare read integer
 	syscall # Read integer
 	
