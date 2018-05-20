@@ -17,6 +17,7 @@ REPLACE_NUM_MSG: .asciiz "What number to replace?"
 REPLACE_WITH_MSG: .asciiz "Replace the number # (in index #) with what number?"
 DELETE_NUM_MSG: .asciiz "What number to delete?"
 FIND_NUM_MSG: .asciiz "What number to find?"
+CHOOSE_BASE_MSG: .asciiz "What basis should be used when printing the average? (2-10)"
 
 .text
 main:
@@ -218,8 +219,47 @@ FIND:
 	
 	jr $ra #return to caller
 	
-
 AVERAGE:
+	move $s0, $a1 # NUM address
+	move $s1, $a2 # ARR address
+	lb $s2, ($a1) # ARR length
+	
+	beq $s2, 0, print_arr_empty # If array is empty, nothing to average, notify and return to main
+	
+	li $t0, 0 # Running total
+	li $t1, 0 # Index counter
+sum_loop:
+	sll $t2, $t1, 2 # Calculate word offset
+	add $t3, $t2, $s1 # Calculate array address
+	lw $t4, ($t3) # Read value from array
+	add $t0, $t0, $t4 # Sum values
+	addi $t1, $t1, 1 # Increment index counter
+	ble $t1, $s2, sum_loop # Keep iterating until end of array
+	
+	div $t0, $s2 # Divide sum by array length
+	mflo $t0 # Get the quotatient from the division
+	
+	li $v0, 4 # Prepare print string
+	la $a0, CHOOSE_BASE_MSG #What basis to print?
+	syscall # Print string
+	
+	li $v0, 5 # Prepare read integer
+	syscall # Read integer
+	
+	sub $sp, $sp, -4 # Decrement $sp
+	sw $ra, 4($sp) # Push $ra to stack
+	
+	move $a1, $t0 # Pass average to print
+	move $a2, $v0 # Pass basis to print in
+	
+	jal PRINT_NUM # Call print_num procedure
+	
+	lw $ra, 4($sp) # Pop $ra from stack
+	addi $sp, $sp, 4 # Increment stack pointer
+	
+	jr $ra
+
+	
 MAX:
 PRINT_ARRAY:
 SORT:
@@ -281,6 +321,42 @@ end_reduction:
 	sw $t2, ($a1) # Save new array length to memory
 	jr $ra # Return to caller
 	
+#A procedure to convert a number to a specified base and print it
+#$a1 = number to print
+#$a2 = base
+PRINT_NUM:
+	move $t0, $a1 # store number in temp
+	li $t1, 0 # stack pushes counter
+	bge $t0, 0, print_num_loop # if number is positive, simply print
+	
+	li $v0, 11 # Prepare print char
+	li $a0, '-' #print minus sign
+	syscall
+	abs $t0, $t0 # Replace with absolute value
+
+print_num_loop:
+	beq $t0, 0, print_from_stack # when number is 0 we're done
+	div $t0, $a2 # devide number by base
+	mfhi $t2 # remainder
+	mflo $t0 # quotiant
+	
+	sub $sp, $sp, 4 # push stack
+	addi $t1, $t1, 1 # count how many pushes were made
+	sw $t2, ($sp) # save remainder to stack
+	j print_num_loop
+
+print_from_stack:
+	lw $t4, ($sp) # read current num from stack
+	addi $sp, $sp, 4
+
+	li $v0, 1 # Prepare print integer
+	move $a0, $t4 # print current num from stack
+	syscall
+	
+	subi $t1, $t1, 1 # Decrement push counter
+
+	bgt $t1, 0, print_from_stack # When push counter is 0 we are done reading from the stack
+	jr $ra # return to caller
 
 #====================
 #Printing procedures=
