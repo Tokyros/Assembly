@@ -314,6 +314,48 @@ replace_max:
 	j continue_loop # return to loop
 
 PRINT_ARRAY:
+	move $s0, $a1 # NUM address
+	move $s1, $a2 # ARR address
+	lb $s2, ($a1) # ARR length
+	
+	beq $s2, 0, print_arr_empty # If array is empty, nothing to delete, notify and return to main
+	
+	li $s3, 0 # index counter
+	
+	li $v0, 4 # Prepare print string
+	la $a0, CHOOSE_BASE_MSG #What basis to print?
+	syscall # Print string
+	
+	li $v0, 5 # Prepare read integer
+	syscall # Read integer
+	
+	move $s4, $v0 # Store basis in $s0
+	
+loop_array:
+	sll $t1, $s3, 2 # Calculate word offset
+	add $t2, $t1, $s1 # Calculate current address of array
+	lw $t3, ($t2) # load number from array
+
+	sub $sp, $sp, -4 # Decrement $sp
+	sw $ra, 4($sp) # Push $ra to stack
+	
+	move $a1, $t3 # Pass max to print
+	move $a2, $s4 # Pass basis to print in
+	
+	jal PRINT_NUM # Call print_num procedure
+	
+	lw $ra, 4($sp) # Pop $ra from stack
+	addi $sp, $sp, 4 # Increment stack pointer
+	
+	li $v0, 11 # Prepare print char
+	li $a0, ',' # Print ,
+	syscall
+	
+	addi $s3, $s3, 1 # increment index counter
+	blt $s3, $s2, loop_array # loop until end of array
+	
+	jr $ra # return to caller
+
 SORT:
 
 END:
