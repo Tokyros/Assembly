@@ -154,6 +154,7 @@ REPLACE:
 	
 	sll $t7, $t4, 2 # Calculate word offset of index found
 	add $t7, $t7, $s1 # Address of number to replace
+	sw $t3, ($t7) # Store new number in old number address
 	
 	jr $ra # Return to main
 	
