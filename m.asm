@@ -177,8 +177,48 @@ DEL:
 	move $a3, $v0 # Pass Index to delete as third argument
 	j REDUCTION
 	
-
 FIND:
+	move $s0, $a1 # NUM address
+	move $s1, $a2 # ARR address
+	lb $s2, ($a1) # ARR length
+	
+	beq $s2, 0, print_arr_empty # If array is empty, nothing to delete, notify and return to main
+	
+	li $v0, 4 # Prepare print string
+	la $a0, FIND_NUM_MSG # What number to find
+	syscall # Print string
+	
+	li $v0, 5 # Prepare read integer
+	syscall # read integer
+	
+	sub $sp, $sp, -8 # Decrement $sp
+	sw $v0, 4($sp) # Push number input to stack
+	sw $ra, 8($sp) # Push $ra to stack
+	
+	move $a1, $s2 # Pass array length as first argument
+	move $a3, $s1 # Pass array address as third argument
+	move $a2, $v0 # Pass user input as second argument
+	
+	jal CHECK # Call check procedure
+	
+	lw $t0 4($sp) # Pop user input from stack
+	lw $ra, 8($sp) # Pop $ra from stack
+	addi $sp, $sp, 8 # Increment stack pointer
+	
+	blt, $v0, 0, print_number_not_found # If number was not found by check, notify and return to caller
+	
+	sub $sp, $sp, -4 # Push to stack
+	sw $ra, 4($sp) # Store ra on stack
+	
+	move $a1, $v0 # Pass found index as first argument
+	jal print_number_exists # Print the found number's index
+	
+	lw $ra, 4($sp) # Read ra from stack
+	addi $sp, $sp, 4 # Pop stack
+	
+	jr $ra #return to caller
+	
+
 AVERAGE:
 MAX:
 PRINT_ARRAY:
