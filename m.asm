@@ -1,7 +1,7 @@
 .data
 ARR: .space 120
-NUM: .byte 0
 HELPER_ARR: .space 120
+NUM: .byte 0
 
 #JUMP TABLE
 JUMP_TABLE: .word ADD_NUMBER, REPLACE, DEL, FIND, AVERAGE, MAX, PRINT_ARRAY, SORT, END
@@ -72,8 +72,8 @@ ADD_NUMBER:
 	lw $ra, 8($sp) # Pop $ra from stack
 	addi $sp, $sp, 8 # Increment stack pointer
 	
-	move $t1, $v0 # Store check result in $t1
-	bge $t1, 0, print_number_exists # If check returned an index, print that the number exists
+	move $a1, $v0 # Store check result in $t1
+	bge $a1, 0, print_number_exists # If check returned an index, print that the number exists
 	
 	sll $t2, $s2, 2 # Calculate last array index using NUM value
 	add $t2, $t2, $s1 # Calculate last array address
