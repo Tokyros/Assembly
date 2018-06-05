@@ -1,3 +1,6 @@
+#Shahar Rosen
+#204541791
+
 .data
 ARR: .space 120
 HELPER_ARR: .space 120
@@ -22,6 +25,7 @@ FIND_NUM_MSG: .asciiz "What number to find?"
 CHOOSE_BASE_MSG: .asciiz "What basis should be used when printing the average? (2-10)"
 
 .text
+#Main procedure, shows the menu and asks for an option from the user
 main:
 	li $v0, 4 #Prepate print string syscall
 	la $a0, MENU_MSG #Print menu options
@@ -43,7 +47,11 @@ main:
 
 #Menu procedures
 
-#Tries to add a number to the array from user input, if the number the user tries to add exists on the array, notify and don't add
+#Tries to add a number to the array from user input, 
+#if the number the user tries to add exists or the array, notify and don't add
+#$a1 = num address
+#$a2 = arr address
+#$a3 = helper arr address
 ADD_NUMBER:
 	move $s0, $a1 # NUM address
 	move $s1, $a2 # ARR address
@@ -82,6 +90,12 @@ ADD_NUMBER:
 	sw $s2, ($s0) # Store arr length to NUM
 	jr $ra # Return to caller
 
+#Asks the user for a number to replace, if that number exists, asks the user what number
+#To replace it with and replaces it
+#If the array is empty - notify and do nothing
+#$a1 = num address
+#$a2 = arr address
+#$a3 = helper arr address
 REPLACE:
 	move $s0, $a1 # NUM address
 	move $s1, $a2 # ARR address
@@ -155,6 +169,11 @@ REPLACE:
 	
 	jr $ra # Return to main
 
+#Asks the user for a number to delete, if the number exists it is deleted and
+#the array is rearanged acordingly (so it won't contain blank spaces)
+#$a1 = num address
+#$a2 = arr address
+#$a3 = helper arr address
 DEL:
 	move $s0, $a1 # NUM address
 	move $s1, $a2 # ARR address
@@ -189,6 +208,11 @@ DEL:
 	move $a3, $v0 # Pass Index to delete as third argument
 	j REDUCTION
 	
+#Askes the user for a number to find inside the array,
+#If the number exists it shows the index of the found number.
+#$a1 = num address
+#$a2 = arr address
+#$a3 = helper arr address
 FIND:
 	move $s0, $a1 # NUM address
 	move $s1, $a2 # ARR address
@@ -230,6 +254,11 @@ FIND:
 	
 	jr $ra #return to caller
 	
+#Calculates the average of all items in the array and prints it in a basis
+#according to user input between 2-10
+#$a1 = num address
+#$a2 = arr address
+#$a3 = helper arr address
 AVERAGE:
 	move $s0, $a1 # NUM address
 	move $s1, $a2 # ARR address
@@ -270,7 +299,10 @@ sum_loop:
 	
 	jr $ra
 
-	
+#Finds the highest number in the array and prints it in a chosen basis (2-10)
+#$a1 = num address
+#$a2 = arr address
+#$a3 = helper arr address
 MAX:
 	move $s0, $a1 # NUM address
 	move $s1, $a2 # ARR address
@@ -313,6 +345,10 @@ replace_max:
 	move $t0, $t4 # store the new max value in t0
 	j continue_loop # return to loop
 
+#Prints all elements in array in a chosen basis (2-10)
+#$a1 = num address
+#$a2 = arr address
+#$a3 = helper arr address
 PRINT_ARRAY:
 	move $s0, $a1 # NUM address
 	move $s1, $a2 # ARR address
@@ -356,8 +392,17 @@ loop_array:
 	
 	jr $ra # return to caller
 
+#Unimplemented - should sort the array into the helper array
+#$a1 = num address
+#$a2 = arr address
+#$a3 = helper arr address
 SORT:
+	jr $ra
 
+#Quits the program
+#$a1 = num address
+#$a2 = arr address
+#$a3 = helper arr address
 END:
 	li $v0, 10 #Prepare exit syscall
 	syscall #Exit
